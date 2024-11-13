@@ -38,19 +38,12 @@ class DataDownloader:
         self.api_key = config.get("API","KEY")
         self.url = config.get("API","URL")
         self.key = {self.id:self.api_key}
-
-
-        # # Preparing API Credentials 
-        # f= open(r"C:\\Users\\Bob\\.cdsapirc","w")
-        # f.write(f"""url: {url}\n{key}\nverify: 0
-        # """)
-        # f.close()
         
         self.folder_path = "raw_data/climate"
         os.makedirs(self.folder_path, exist_ok=True)
 
     
-    def download(self, datasets = None,
+    def download_climate_data(self, datasets = None,
                  params = None,
                  file_name= None):
        
