@@ -1,0 +1,17 @@
+# Ignore Python Cache
+*.pyc 
+*/__pycache__/*
+__pycache__/*
+
+# Ignore Virtual Enciornment
+.venv/
+
+# Ignore configuration file
+config.ini
+
+# Ignore test Script
+test.py
+
+# Ignore raw_data from Climate since its too large to commit
+raw_data/climate/*
+
