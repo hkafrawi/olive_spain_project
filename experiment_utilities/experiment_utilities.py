@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 import warnings
+import zipfile
 
 class ExperimentUtilityBox():
     """
@@ -121,3 +122,11 @@ class ExperimentUtilityBox():
         ).rename(columns={"level_1":"Year",0:"Yield_Density"})
 
         return dfv2
+    
+    @staticmethod
+    def unzip_files(zip_path:str, location:str) -> None:
+        # Open the ZIP file
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            # Extract all files
+            zip_ref.extractall(location)
+            print(f"Files extracted successfully to '{location}'")
