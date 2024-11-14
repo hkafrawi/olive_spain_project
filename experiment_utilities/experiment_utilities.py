@@ -1,7 +1,10 @@
+from itertools import chain
 import pickle
 import os
 from datetime import datetime
 import pandas as pd
+import numpy as np
+import warnings
 
 class ExperimentUtilityBox():
     """
@@ -63,3 +66,58 @@ class ExperimentUtilityBox():
         file_path = open(f"{pk_folder_path}.pickle","ab")
         pickle.dump(pandas_object,file_path)
         pandas_object.to_csv(f"{c_folder_path}.csv")
+    
+    @staticmethod
+    def clean_files(filename):
+        try:
+            df = pd.read_excel(filename)
+            df2 = df.iloc[:-2,1:3]
+            df2.rename(columns={df2.columns[-1]:filename.split("/")[-1].split(".")[0].split("/")[-1]},inplace=True)
+            df2.set_index(df2.columns[0],inplace=True)
+            df2.drop(["Total",np.nan],axis=0,inplace=True)
+            return df2
+        except Exception as e:
+            print(e)
+            pass
+
+    @staticmethod
+    def generate_new_columns(df,variable):
+        df.columns.name = None
+        new_columns = ["{}_Week_{}".format(variable,x.split("-")[1]) for x in df.columns[2:]]
+        new_columns = list(chain(list(df.columns[:2]),new_columns))
+        df.columns = new_columns
+        return df
+
+    @staticmethod
+    def combine_datasets(dfs, variable):
+        dataframes = []
+
+        for df in dfs:
+            df = ExperimentUtilityBox.generate_new_columns(df,variable)
+            
+        for dataframe in dfs:
+            dataframe = dataframe.melt(id_vars=["Year","Province"],value_vars = list(dataframe.columns[2:55]))
+            dataframes.append(dataframe)
+        final_dataframe = pd.concat(dataframes
+                                    ).pivot_table(index=["Year","Province"],
+                                                columns="variable",
+                                                values="value")
+        return final_dataframe
+
+    @staticmethod
+    def prepare_yield_dataset(yield_folder_path):
+
+        # Suppress the specific warning from openpyxl
+        warnings.filterwarnings("ignore", category=UserWarning, message="Workbook contains no default style, apply openpyxl's default")
+
+        dataframes = [ExperimentUtilityBox.clean_files(str(yield_folder_path+f"/{file}")) for file in os.listdir(yield_folder_path)]
+        df = pd.concat(dataframes,join="outer",axis=1)
+
+        df = df.reset_index()
+        dfv2 = df.drop(0,axis=0
+        ).rename(columns={'Unnamed: 1':"Province"}
+        ).set_index("Province").stack(
+        ).reset_index(
+        ).rename(columns={"level_1":"Year",0:"Yield_Density"})
+
+        return dfv2
