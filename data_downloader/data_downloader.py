@@ -52,7 +52,7 @@ class DataDownloader:
        if not params:
            params = self.params[0]
        if not file_name:
-           file_name=f"{datetime.now().strftime('%d%m%Y %H_%M')}"
+           file_name=f"{datetime.now().strftime('%d%m%Y %H_%M')}.zip"
            file_path = os.path.join(self.folder_path, file_name)
        else:
            file_path = os.path.join(self.folder_path, file_name)
