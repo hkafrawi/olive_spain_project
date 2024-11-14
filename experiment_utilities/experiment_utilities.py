@@ -104,29 +104,17 @@ class ExperimentUtilityBox():
                                                 columns="variable",
                                                 values="value")
         return final_dataframe
-
-    @staticmethod
-    def prepare_yield_dataset(yield_folder_path):
-
-        # Suppress the specific warning from openpyxl
-        warnings.filterwarnings("ignore", category=UserWarning, message="Workbook contains no default style, apply openpyxl's default")
-
-        dataframes = [ExperimentUtilityBox.clean_files(str(yield_folder_path+f"/{file}")) for file in os.listdir(yield_folder_path)]
-        df = pd.concat(dataframes,join="outer",axis=1)
-
-        df = df.reset_index()
-        dfv2 = df.drop(0,axis=0
-        ).rename(columns={'Unnamed: 1':"Province"}
-        ).set_index("Province").stack(
-        ).reset_index(
-        ).rename(columns={"level_1":"Year",0:"Yield_Density"})
-
-        return dfv2
     
     @staticmethod
     def unzip_files(zip_path:str, location:str) -> None:
-        # Open the ZIP file
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            # Extract all files
-            zip_ref.extractall(location)
-            print(f"Files extracted successfully to '{location}'")
+        try:
+            # Open the ZIP file
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                # Extract all files
+                zip_ref.extractall(location)
+                print(f"{zip_path} extracted successfully to '{location}'")
+        except Exception as e:
+            print(e)
+        else:
+            os.remove(zip_path)
+            print(f"{zip_path} has been deleted")
