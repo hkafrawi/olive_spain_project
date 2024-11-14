@@ -4,7 +4,6 @@ import os
 
 folder_path = "raw_data\climate"
 climate_datasets = os.listdir(folder_path)
-print(climate_datasets)
 
 zip_files = [file for file in climate_datasets if file.endswith(".zip")]
 for file in zip_files:

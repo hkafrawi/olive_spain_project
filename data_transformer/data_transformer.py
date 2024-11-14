@@ -3,6 +3,7 @@ from experiment_utilities import ExperimentUtilityBox as eub
 import pandas as pd
 import xarray as xr
 import os
+import geopandas
 from datetime import datetime
 
 class DataTransformer():
@@ -10,7 +11,7 @@ class DataTransformer():
         pass
 
     @staticmethod
-    def prepare_yield_dataset(yield_folder_path):
+    def prepare_yield_dataset(yield_folder_path:str) -> pd.DataFrame:
 
         # Suppress the specific warning from openpyxl
         warnings.filterwarnings("ignore", category=UserWarning, message="Workbook contains no default style, apply openpyxl's default")
@@ -58,3 +59,27 @@ class DataTransformer():
         df["Week"] = df["time"].dt.strftime("%Y-%U")
 
         return df.groupby(["Week","latitude","longitude"]).agg({variable:'mean'}).reset_index()
+    
+    @staticmethod
+    def prepare_polygon_dataset(filepath:str) -> pd.DataFrame:
+        """
+        Prepares the polygon dataset from a .shp file.
+
+        This function processes a .shp file by dissolving the dataset by province,
+        then computing the centroid for each region as well as its latitude and longitude
+        points.
+
+        Parameters:
+            file_path (str): The file path to the .shp file.
+
+        Returns:
+            pd.DataFrame       
+        """
+        df = geopandas.read_file(filepath)
+        spain_df = df.dissolve(by="DS_PROVINC")
+
+        spain_df["centroid"] = spain_df["geometry"].apply(lambda x:x.centroid)
+        spain_df["lat"] = spain_df["centroid"].apply(lambda point:point.y)
+        spain_df["lon"] = spain_df["centroid"].apply(lambda point:point.x)
+
+        return spain_df
