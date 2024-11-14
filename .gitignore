@@ -15,3 +15,5 @@ test.py
 # Ignore raw_data from Climate since its too large to commit
 raw_data/climate/*
 
+# Ignore process_data
+process_data/*
