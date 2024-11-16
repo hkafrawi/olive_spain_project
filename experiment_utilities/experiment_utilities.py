@@ -80,30 +80,6 @@ class ExperimentUtilityBox():
         except Exception as e:
             print(e)
             pass
-
-    @staticmethod
-    def generate_new_columns(df,variable):
-        df.columns.name = None
-        new_columns = ["{}_Week_{}".format(variable,x.split("-")[1]) for x in df.columns[2:]]
-        new_columns = list(chain(list(df.columns[:2]),new_columns))
-        df.columns = new_columns
-        return df
-
-    @staticmethod
-    def combine_datasets(dfs, variable):
-        dataframes = []
-
-        for df in dfs:
-            df = ExperimentUtilityBox.generate_new_columns(df,variable)
-            
-        for dataframe in dfs:
-            dataframe = dataframe.melt(id_vars=["Year","Province"],value_vars = list(dataframe.columns[2:55]))
-            dataframes.append(dataframe)
-        final_dataframe = pd.concat(dataframes
-                                    ).pivot_table(index=["Year","Province"],
-                                                columns="variable",
-                                                values="value")
-        return final_dataframe
     
     @staticmethod
     def unzip_files(zip_path:str, location:str) -> None:
