@@ -1,3 +1,4 @@
+from itertools import chain
 import warnings
 
 from shapely import Point
@@ -157,3 +158,26 @@ class DataTransformer():
         result_df = pd.DataFrame(matched_data)
 
         return result_df
+
+    @staticmethod
+    def prepare_wide_dataset(dfs, variable):
+        combined_dataframe = pd.concat(dfs)
+        combined_dataframe["Year"] = combined_dataframe["Week"].apply(lambda x: x.split("-")[0])
+        combined_dataframe["Week"] = combined_dataframe["Week"].apply(lambda x: "{}_Week_{}".format(variable, x.split("-")[1]))
+
+        final_dataframe = combined_dataframe.pivot_table(index=["Year","Province"],
+                                                         columns="Week")
+        
+        return final_dataframe
+    
+    @staticmethod
+    def prepare_long_dataset(dfs, variable):
+        combined_dataframe = pd.concat(dfs)
+        combined_dataframe["Year"] = combined_dataframe["Week"].apply(lambda x: x.split("-")[0])
+        combined_dataframe["Week"] = combined_dataframe["Week"].apply(lambda x: x.split("-")[1])
+
+        final_dataframe = combined_dataframe.melt(id_vars=["Year","Week","Province"],
+                                                value_vars=variable)
+        
+        return final_dataframe
+        
