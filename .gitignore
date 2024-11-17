@@ -17,3 +17,4 @@ raw_data/climate/*
 
 # Ignore process_data
 process_data/*
+data_under_experiment/*
