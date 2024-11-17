@@ -2,6 +2,7 @@
 *.pyc 
 */__pycache__/*
 __pycache__/*
+.ipynb_checkpoints/*
 
 # Ignore Virtual Enciornment
 .venv/
@@ -11,6 +12,7 @@ config.ini
 
 # Ignore test Script
 test.py
+test.ipynb
 
 # Ignore raw_data from Climate since its too large to commit
 raw_data/climate/*
