@@ -180,4 +180,29 @@ class DataTransformer():
                                                 value_vars=variable)
         
         return final_dataframe
+    
+    @staticmethod
+    def combine_features(mode,directory) -> pd.DataFrame:
+        # Combining Features
+        valid_modes = {"Wide", "Long"}
+        if mode not in valid_modes:
+            raise ValueError(f"Invalid mode '{mode}'. Expected one of {valid_modes}.")
+        
+        if mode == "Wide":
+            axis=1
+        else:
+            axis=0
+
+        features = list(filter(lambda s: s.startswith("Preprocess_") and f"_{mode}" in s, os.listdir(directory)))
+        features_dataframes = []
+        for file in features:
+            file_path = os.path.join(directory,file)
+            features_dataframes.append(pd.read_pickle(file_path).copy())
+
+        features_combined = pd.concat(features_dataframes,join="outer",axis=axis).reset_index()
+
+        eub.save_dataframe(features_combined,f"Combined_{mode}_Features",location=("process_data\\pickle\\climate_polygon_combined",
+                                                                                "process_data\\csv\\climate_polygon_combined"))
+        
+        return features_combined
         
