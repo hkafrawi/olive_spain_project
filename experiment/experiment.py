@@ -76,5 +76,8 @@ class Experiment:
 
         return y_test, y_pred
 
-    def evaluate(self):
-        pass
+    def evaluate(self, y_test, y_pred, metrics):
+        results = {}
+        for name, metric in metrics.items():
+            results[name] = metric(y_test, y_pred)
+        return results
