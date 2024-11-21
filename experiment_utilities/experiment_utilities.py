@@ -1,7 +1,9 @@
+from functools import wraps
 from itertools import chain
 import pickle
 import os
 from datetime import datetime
+import traceback
 import pandas as pd
 import numpy as np
 import warnings
@@ -96,3 +98,27 @@ class ExperimentUtilityBox():
         else:
             os.remove(zip_path)
             print(f"{zip_path} has been deleted")
+
+    @staticmethod
+    def log_decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = datetime.now()
+            print(f"Starting {func.__name__} with args: {args} and kwargs: {kwargs}")
+            
+            try:
+                result = func(*args, **kwargs)  # Call the original function with instance
+                return result
+            except Exception as e:
+                print(f"Error in {func.__name__}: {e}")
+                print(traceback.print_exc())
+            finally:
+                end_time = datetime.now()
+                elapsed_time = end_time - start_time
+                total_seconds = elapsed_time.total_seconds()
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                print(f"Finished {func.__name__}")
+                print(f"{func.__name__} took {int(hours)} hrs {int(minutes)} mins {int(seconds)} seconds to compute")
+        
+        return wrapper
