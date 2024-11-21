@@ -67,6 +67,8 @@ class ExperimentUtilityBox():
         file_path = open(f"{pk_folder_path}.pickle","ab")
         pickle.dump(pandas_object,file_path)
         pandas_object.to_csv(f"{c_folder_path}.csv")
+
+        return pk_folder_path, c_folder_path
     
     @staticmethod
     def clean_files(filename):
