@@ -12,7 +12,7 @@ class Experiment:
         self.date_column = date_column
         self.train_data = None
         self.test_data = None
-        
+
     def train_test_split(self, test_size=0.2, random_state=42):
         X = self.data.drop(columns=[self.target_column])
         y = self.data[self.target_column]
@@ -23,8 +23,11 @@ class Experiment:
         )
         
 
-    def date_split(self):
-        pass
+    def date_split(self, split_date):
+        if not self.date_column:
+            raise ValueError("Date Column is not defined.")
+        self.train_data = self.data[self.data[self.date_column] < split_date]
+        self.test_data = self.data[self.data[self.date_column] >= split_date]
 
     def setup_pipeline(self):
         pass
