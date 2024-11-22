@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.cluster import KMeans
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -97,3 +98,54 @@ class Experiment:
         for name, metric in metrics.items():
             results[name] = metric(y_test, y_pred)
         return results
+    
+    @staticmethod
+    def cluster_data(data, target_column, dataset_name):
+        """Clusters the data using KMeans with the optimum number of clusters determined by the elbow method.
+        
+        Args:
+            data (pd.DataFrame): The input dataset.
+            target_column (str): The name of the target column to exclude from clustering.
+            dataset_name (str): The base name of the dataset.
+
+        Returns:
+            list[dict]: A list of dictionaries containing cluster-specific datasets.
+        """
+
+        def optimum_cluster(features):
+            """Utility function to compute the optimum number of clusters using the elbow method."""
+            wcss = []
+            for i in range(1, 11):
+                kmeans = KMeans(n_clusters=i, random_state=42)
+                kmeans.fit(features)
+                wcss.append(kmeans.inertia_)
+
+            # Calculate the "elbow" point using the second derivative
+            wcss_diff = np.diff(wcss)  # First derivative
+            wcss_diff2 = np.diff(wcss_diff)  # Second derivative
+
+            # Find the index where the second derivative changes the most (highest positive value)
+            elbow_index = np.argmax(wcss_diff2) + 2  # +2 accounts for diff shifts
+            return elbow_index
+
+        # Exclude the target column for clustering
+        features = data.drop(columns=[target_column])
+
+        # Determine the optimum number of clusters
+        n_clusters = optimum_cluster(features)
+
+        # Perform KMeans clustering
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        data['Cluster'] = kmeans.fit_predict(features)
+
+        # Create a list of dictionaries for each cluster
+        clustered_data = []
+        for cluster_id in range(n_clusters):
+            cluster_data = data[data['Cluster'] == cluster_id].copy()
+            cluster_data.drop(columns=['Cluster'], inplace=True)
+            clustered_data.append({
+                'Dataset_name': f"{dataset_name}_Cluster_{cluster_id}",
+                'Data': cluster_data
+            })
+
+        return clustered_data
