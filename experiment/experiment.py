@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -6,16 +7,18 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV 
 
 class Experiment:
-    def __init__(self, data, target_column, date_column=None):
+    def __init__(self, data, target_column, dataset_name, date_column=None):
         self.data = data
         self.target_column = target_column
         self.date_column = date_column
+        self.dataset_name = dataset_name
         self.train_data = None
         self.test_data = None
 
         self.pipeline = None
         self.search = None
-        self.best_param = None
+        self.best_params = None
+        self.experiment_name = None
 
     def train_test_split(self, test_size=0.2, random_state=42):
         X = self.data.drop(columns=[self.target_column])
@@ -36,27 +39,33 @@ class Experiment:
     def setup_pipeline(self,steps):
         self.pipeline = Pipeline(steps)
 
-    def run_search(self, param_grid, search_type="grid", cv=5, n_iter=10, random_state=42):
+        self.experiment_name = "_".join(type(step[1]).__name__ for step in steps)
+
+    def run_search(self, param_grid, iterations=1, cv=5, random_state=42):
         if not self.pipeline:
             raise ValueError("Pipeline is not defined. Call setup_pipeline first.")
+        if type(iterations) != int:
+            raise TypeError("Iterations has to be an int more than 1. Default: 1")
         
         X_train = self.train_data.drop(columns=[self.target_column])
         y_train = self.train_data[self.target_column]
 
-        # Choose search method
-        if search_type == "grid":
+        if iterations == 1:
+            for hyperparamteres in param_grid.values():
+                iterations*=len(hyperparamteres)
+        if iterations < 100:
             self.search = GridSearchCV(
                 self.pipeline, param_grid, cv=cv, scoring='r2', n_jobs=-1,
                 verbose=2
             )
-        elif search_type == "random":
+        else:
+            iteration_num = int(np.ceil(0.05*iterations))
             self.search = RandomizedSearchCV(
-                self.pipeline, param_grid, cv=cv, n_iter=n_iter, 
+                self.pipeline, param_grid, cv=cv, n_iter=iteration_num, 
                 scoring='r2', n_jobs=-1, random_state=random_state,
                 verbose=2
             )
-        else:
-            raise ValueError("Invalid search_type. Choose 'grid' or 'random'.")
+        
 
         # Perform search
         self.search.fit(X_train, y_train)
@@ -77,7 +86,14 @@ class Experiment:
         return y_test, y_pred
 
     def evaluate(self, y_test, y_pred, metrics):
-        results = {}
+        results = {
+        "Model": type(self.search.best_estimator_.named_steps['model']).__name__,
+        "Best_Params": self.best_params,
+        "Dataset_Name": self.dataset_name,
+        "Experiment_Name": self.experiment_name,
+        "Observations": len(self.train_data)
+        }
+
         for name, metric in metrics.items():
             results[name] = metric(y_test, y_pred)
         return results
