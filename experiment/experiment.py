@@ -31,11 +31,25 @@ class Experiment:
         )
         
 
-    def date_split(self, split_date):
+    def date_split(self, split_date, drop_date=True):
+        """
+        Splits the data into train and test sets based on a specified date.
+
+        Args:
+            split_date (str or datetime): The date to split the data.
+            drop_date (bool, optional): Whether to drop the date column from train and test datasets. Defaults to True.
+        """
         if not self.date_column:
             raise ValueError("Date Column is not defined.")
+
+        # Split the data
         self.train_data = self.data[self.data[self.date_column] < split_date]
         self.test_data = self.data[self.data[self.date_column] >= split_date]
+
+        # Drop the date column if specified
+        if drop_date:
+            self.train_data = self.train_data.drop(columns=[self.date_column])
+            self.test_data = self.test_data.drop(columns=[self.date_column])
 
     def setup_pipeline(self,steps):
         self.pipeline = Pipeline(steps)
