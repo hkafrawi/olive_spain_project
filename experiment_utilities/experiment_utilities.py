@@ -1,11 +1,29 @@
+from functools import wraps
+import hashlib
 from itertools import chain
+import logging
 import pickle
 import os
 from datetime import datetime
+import shutil
+import sys
+import traceback
 import pandas as pd
 import numpy as np
 import warnings
 import zipfile
+
+class StreamToLogger:
+            def __init__(self, logger, level):
+                self.logger = logger
+                self.level = level
+            
+            def write(self, message):
+                if message.strip():  # Ignore empty messages
+                    self.logger.log(self.level, message.strip())
+            
+            def flush(self):
+                pass  # No flush needed for logger redirection
 
 class ExperimentUtilityBox():
     """
@@ -67,6 +85,43 @@ class ExperimentUtilityBox():
         file_path = open(f"{pk_folder_path}.pickle","ab")
         pickle.dump(pandas_object,file_path)
         pandas_object.to_csv(f"{c_folder_path}.csv")
+
+        return pk_folder_path, c_folder_path
+    
+    @staticmethod
+    def move_directory_with_timestamp(src_dir, dest_dir):
+        """
+        Moves a directory to a new location, appending a timestamp to the destination directory's name.
+
+        Args:
+            src_dir (str): The path to the source directory to move.
+            dest_dir (str): The base path for the destination directory.
+
+        Returns:
+            str: The full path to the moved directory at the destination.
+        """
+        # Ensure the source directory exists
+        if not os.path.exists(src_dir):
+            raise FileNotFoundError(f"Source directory does not exist: {src_dir}")
+        
+        if not os.path.isdir(src_dir):
+            raise ValueError(f"Source path is not a directory: {src_dir}")
+        
+        # Create a timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Append timestamp to the destination directory name
+        dest_with_timestamp = f"{dest_dir}_{timestamp}"
+        
+        # Ensure the destination directory does not already exist
+        if os.path.exists(dest_with_timestamp):
+            raise FileExistsError(f"Destination directory already exists: {dest_with_timestamp}")
+        
+        # Move the directory
+        shutil.move(src_dir, dest_with_timestamp)
+        
+        print(f"Directory moved from '{src_dir}' to '{dest_with_timestamp}'")
+        return dest_with_timestamp
     
     @staticmethod
     def clean_files(filename):
@@ -80,30 +135,6 @@ class ExperimentUtilityBox():
         except Exception as e:
             print(e)
             pass
-
-    @staticmethod
-    def generate_new_columns(df,variable):
-        df.columns.name = None
-        new_columns = ["{}_Week_{}".format(variable,x.split("-")[1]) for x in df.columns[2:]]
-        new_columns = list(chain(list(df.columns[:2]),new_columns))
-        df.columns = new_columns
-        return df
-
-    @staticmethod
-    def combine_datasets(dfs, variable):
-        dataframes = []
-
-        for df in dfs:
-            df = ExperimentUtilityBox.generate_new_columns(df,variable)
-            
-        for dataframe in dfs:
-            dataframe = dataframe.melt(id_vars=["Year","Province"],value_vars = list(dataframe.columns[2:55]))
-            dataframes.append(dataframe)
-        final_dataframe = pd.concat(dataframes
-                                    ).pivot_table(index=["Year","Province"],
-                                                columns="variable",
-                                                values="value")
-        return final_dataframe
     
     @staticmethod
     def unzip_files(zip_path:str, location:str) -> None:
@@ -118,3 +149,83 @@ class ExperimentUtilityBox():
         else:
             os.remove(zip_path)
             print(f"{zip_path} has been deleted")
+
+    @staticmethod
+    def log_decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = datetime.now()
+            print(f"Starting {func.__name__} from module {func.__module__} with args: {args} and kwargs: {kwargs}")
+            
+            try:
+                result = func(*args, **kwargs)  # Call the original function with instance
+                return result
+            except Exception as e:
+                print(f"Error in {func.__name__}: {e}")
+                print(traceback.print_exc())
+            finally:
+                end_time = datetime.now()
+                elapsed_time = end_time - start_time
+                total_seconds = elapsed_time.total_seconds()
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                print(f"Finished {func.__name__}")
+                print(f"{func.__name__} took {int(hours)} hrs {int(minutes)} mins {int(seconds)} seconds to compute")
+        
+        return wrapper
+    
+    @staticmethod
+    def compute_hash(hashable_string):
+        return hashlib.sha256(hashable_string.encode()).hexdigest()
+    
+    @staticmethod
+    def generate_log_file():
+        """
+        Generates a log file under 'log_files' directory with the filename as a timestamp.
+        The logger also captures all warning messages.
+        
+        Returns:
+            logger (logging.Logger): Configured logger object.
+        """
+        # Create 'log_files' directory if it doesn't exist
+        log_dir = "log_files"
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # Create a timestamped log file
+        timestamp = datetime.now().strftime("%m_%d_%Y__%H_%M")
+        log_file_path = os.path.join(log_dir, f"{timestamp}.log")
+        
+        # Configure the logger
+        logger = logging.getLogger("ExperimentLogger")
+        logger.setLevel(logging.DEBUG)  # Capture all levels of logs
+        
+        # File handler for writing logs to a file
+        file_handler = logging.FileHandler(log_file_path)
+        file_handler.setLevel(logging.DEBUG)
+        
+        # Formatter for consistent log formatting
+        formatter = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        
+        # Capture warning messages
+        logging.captureWarnings(True)
+        
+        print(f"Logger initialized. Log file created at {log_file_path}")
+        return logger
+    
+    @staticmethod
+    def stream_to_logger(logger):
+        """
+        Redirects all print statements to the logger.
+        
+        Args:
+            logger (logging.Logger): Logger object where print statements will be redirected.
+        """
+               
+        # Redirect stdout (print) to the logger
+        sys.stdout = StreamToLogger(logger, logging.INFO)
+        sys.stderr = StreamToLogger(logger, logging.ERROR)
