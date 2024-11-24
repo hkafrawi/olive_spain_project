@@ -5,6 +5,7 @@ import logging
 import pickle
 import os
 from datetime import datetime
+import shutil
 import sys
 import traceback
 import pandas as pd
@@ -86,6 +87,41 @@ class ExperimentUtilityBox():
         pandas_object.to_csv(f"{c_folder_path}.csv")
 
         return pk_folder_path, c_folder_path
+    
+    @staticmethod
+    def move_directory_with_timestamp(src_dir, dest_dir):
+        """
+        Moves a directory to a new location, appending a timestamp to the destination directory's name.
+
+        Args:
+            src_dir (str): The path to the source directory to move.
+            dest_dir (str): The base path for the destination directory.
+
+        Returns:
+            str: The full path to the moved directory at the destination.
+        """
+        # Ensure the source directory exists
+        if not os.path.exists(src_dir):
+            raise FileNotFoundError(f"Source directory does not exist: {src_dir}")
+        
+        if not os.path.isdir(src_dir):
+            raise ValueError(f"Source path is not a directory: {src_dir}")
+        
+        # Create a timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Append timestamp to the destination directory name
+        dest_with_timestamp = f"{dest_dir}_{timestamp}"
+        
+        # Ensure the destination directory does not already exist
+        if os.path.exists(dest_with_timestamp):
+            raise FileExistsError(f"Destination directory already exists: {dest_with_timestamp}")
+        
+        # Move the directory
+        shutil.move(src_dir, dest_with_timestamp)
+        
+        print(f"Directory moved from '{src_dir}' to '{dest_with_timestamp}'")
+        return dest_with_timestamp
     
     @staticmethod
     def clean_files(filename):
