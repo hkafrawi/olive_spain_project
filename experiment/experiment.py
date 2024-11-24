@@ -66,6 +66,9 @@ class Experiment:
 
         self.experiment_name = "_".join(type(step[1]).__name__ for step in steps)
 
+        print(f"Experiment name set to: {self.experiment_name}")
+
+        
     def run_search(self, param_grid, iterations=1, cv=5,n_jobs = 1, random_state=42):
         if not self.pipeline:
             raise ValueError("Pipeline is not defined. Call setup_pipeline first.")
