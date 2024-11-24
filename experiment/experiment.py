@@ -45,9 +45,16 @@ class Experiment:
         if not self.date_column:
             raise ValueError("Date Column is not defined.")
 
+        self.data[self.date_column] = self.data[self.date_column].astype(int)
         # Split the data
-        self.train_data = self.data[self.data[self.date_column] < split_date]
-        self.test_data = self.data[self.data[self.date_column] >= split_date]
+        try:
+            self.train_data = self.data[self.data[self.date_column] < split_date]
+            self.test_data = self.data[self.data[self.date_column] >= split_date]
+        except TypeError:
+            split_date = int(split_date)
+            self.data[self.date_column] = self.data[self.date_column].astype(int)
+            self.train_data = self.data[self.data[self.date_column] < split_date]
+            self.test_data = self.data[self.data[self.date_column] >= split_date]
 
         # Drop the date column if specified
         if drop_date:
