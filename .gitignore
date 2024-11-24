@@ -17,6 +17,14 @@ test.ipynb
 # Ignore raw_data from Climate since its too large to commit
 raw_data/climate/*
 
-# Ignore process_data
+# Ignore process_data, data_under_experiment, saved_dataframes and backup
 process_data/*
 data_under_experiment/*
+backup/*
+saved_dataframes/*
+
+# Ignore Saved Experiments
+experiments/*
+
+# Ignore log_files
+log_files/*
