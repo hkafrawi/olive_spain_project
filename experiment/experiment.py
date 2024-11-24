@@ -1,3 +1,5 @@
+import os
+import pickle
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
@@ -112,6 +114,33 @@ class Experiment:
         for name, metric in metrics.items():
             results[name] = metric(y_test, y_pred)
         return results
+    
+    def save_experiment(self):
+        if self.experiment_name is None:
+            raise ValueError("Experiment name is not set. Please set up the pipeline first.")
+        
+        experiment_path = f"experiments/{self.experiment_name}_{self.dataset_name}_{self.hash_param_grid}_experiment.pkl"
+        os.makedirs(os.path.dirname(experiment_path), exist_ok=True)
+
+        # Save the entire Experiment instance to a file
+        with open(experiment_path, 'wb') as exp_file:
+            pickle.dump(self, exp_file)
+        print(f"Experiment saved to {experiment_path}")
+
+    def _load_existing_experiment(self):
+        if self.experiment_name is None:
+            return  # We can't load without an experiment name
+        experiment_path = f"experiments/{self.experiment_name}_{self.dataset_name}_{self.hash_param_grid}_experiment.pkl"
+        if os.path.exists(experiment_path):
+            # Load the entire experiment
+            with open(experiment_path, 'rb') as exp_file:
+                loaded_experiment = pickle.load(exp_file)
+                self.__dict__.update(loaded_experiment.__dict__)  # Update this instance with loaded data
+            print(f"Experiment loaded from {experiment_path}")
+            return True
+        else:
+            print(f"No existing experiment found for Experiment '{self.experiment_name}' and Dataset '{self.dataset_name}'. Starting a new experiment.")
+            return False
     
     @staticmethod
     def cluster_data(data, target_column, dataset_name):

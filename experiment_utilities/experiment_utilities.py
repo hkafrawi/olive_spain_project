@@ -1,4 +1,5 @@
 from functools import wraps
+import hashlib
 from itertools import chain
 import pickle
 import os
@@ -122,3 +123,7 @@ class ExperimentUtilityBox():
                 print(f"{func.__name__} took {int(hours)} hrs {int(minutes)} mins {int(seconds)} seconds to compute")
         
         return wrapper
+    
+    @staticmethod
+    def compute_hash(hashable_string):
+        return hashlib.sha256(hashable_string.encode()).hexdigest()
