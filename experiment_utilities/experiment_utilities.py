@@ -1,14 +1,28 @@
 from functools import wraps
 import hashlib
 from itertools import chain
+import logging
 import pickle
 import os
 from datetime import datetime
+import sys
 import traceback
 import pandas as pd
 import numpy as np
 import warnings
 import zipfile
+
+class StreamToLogger:
+            def __init__(self, logger, level):
+                self.logger = logger
+                self.level = level
+            
+            def write(self, message):
+                if message.strip():  # Ignore empty messages
+                    self.logger.log(self.level, message.strip())
+            
+            def flush(self):
+                pass  # No flush needed for logger redirection
 
 class ExperimentUtilityBox():
     """
@@ -105,7 +119,7 @@ class ExperimentUtilityBox():
         @wraps(func)
         def wrapper(*args, **kwargs):
             start_time = datetime.now()
-            print(f"Starting {func.__name__} with args: {args} and kwargs: {kwargs}")
+            print(f"Starting {func.__name__} from module {func.__module__} with args: {args} and kwargs: {kwargs}")
             
             try:
                 result = func(*args, **kwargs)  # Call the original function with instance
@@ -127,3 +141,55 @@ class ExperimentUtilityBox():
     @staticmethod
     def compute_hash(hashable_string):
         return hashlib.sha256(hashable_string.encode()).hexdigest()
+    
+    @staticmethod
+    def generate_log_file():
+        """
+        Generates a log file under 'log_files' directory with the filename as a timestamp.
+        The logger also captures all warning messages.
+        
+        Returns:
+            logger (logging.Logger): Configured logger object.
+        """
+        # Create 'log_files' directory if it doesn't exist
+        log_dir = "log_files"
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # Create a timestamped log file
+        timestamp = datetime.now().strftime("%m_%d_%Y__%H_%M")
+        log_file_path = os.path.join(log_dir, f"{timestamp}.log")
+        
+        # Configure the logger
+        logger = logging.getLogger("ExperimentLogger")
+        logger.setLevel(logging.DEBUG)  # Capture all levels of logs
+        
+        # File handler for writing logs to a file
+        file_handler = logging.FileHandler(log_file_path)
+        file_handler.setLevel(logging.DEBUG)
+        
+        # Formatter for consistent log formatting
+        formatter = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        
+        # Capture warning messages
+        logging.captureWarnings(True)
+        
+        print(f"Logger initialized. Log file created at {log_file_path}")
+        return logger
+    
+    @staticmethod
+    def stream_to_logger(logger):
+        """
+        Redirects all print statements to the logger.
+        
+        Args:
+            logger (logging.Logger): Logger object where print statements will be redirected.
+        """
+               
+        # Redirect stdout (print) to the logger
+        sys.stdout = StreamToLogger(logger, logging.INFO)
+        sys.stderr = StreamToLogger(logger, logging.ERROR)
