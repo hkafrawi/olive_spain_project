@@ -2,6 +2,7 @@ import os
 import pickle
 import pandas as pd
 import numpy as np
+from experiment_utilities import ExperimentUtilityBox as eub
 from sklearn.cluster import KMeans
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
@@ -58,34 +59,39 @@ class Experiment:
 
         self.experiment_name = "_".join(type(step[1]).__name__ for step in steps)
 
-    def run_search(self, param_grid, iterations=1, cv=5, random_state=42):
+    def run_search(self, param_grid, iterations=1, cv=5,n_jobs = 1, random_state=42):
         if not self.pipeline:
             raise ValueError("Pipeline is not defined. Call setup_pipeline first.")
         if type(iterations) != int:
             raise TypeError("Iterations has to be an int more than 1. Default: 1")
         
-        X_train = self.train_data.drop(columns=[self.target_column])
-        y_train = self.train_data[self.target_column]
-
-        if iterations == 1:
-            for hyperparamteres in param_grid.values():
-                iterations*=len(hyperparamteres)
-        if iterations < 100:
-            self.search = GridSearchCV(
-                self.pipeline, param_grid, cv=cv, scoring='r2', n_jobs=-1,
-                verbose=2
-            )
-        else:
-            iteration_num = int(np.ceil(0.05*iterations))
-            self.search = RandomizedSearchCV(
-                self.pipeline, param_grid, cv=cv, n_iter=iteration_num, 
-                scoring='r2', n_jobs=-1, random_state=random_state,
-                verbose=2
-            )
+        self.hash_param_grid = eub.compute_hash(str(param_grid))
         
+        # Attempt to load the existing experiment if the experiment name is set
+        if not self._load_existing_experiment():
+        
+            X_train = self.train_data.drop(columns=[self.target_column])
+            y_train = self.train_data[self.target_column]
 
-        # Perform search
-        self.search.fit(X_train, y_train)
+            if iterations == 1:
+                for hyperparamteres in param_grid.values():
+                    iterations*=len(hyperparamteres)
+            if iterations < 100:
+                self.search = GridSearchCV(
+                    self.pipeline, param_grid, cv=cv, scoring='r2', n_jobs=n_jobs,
+                    verbose=2
+                )
+            else:
+                iteration_num = int(np.ceil(0.05*iterations))
+                self.search = RandomizedSearchCV(
+                    self.pipeline, param_grid, cv=cv, n_iter=iteration_num, 
+                    scoring='r2', n_jobs=n_jobs, random_state=random_state,
+                    verbose=2
+                )
+            
+
+            # Perform search
+            self.search.fit(X_train, y_train)
 
     def run_pipeline(self):
         if not self.search:
