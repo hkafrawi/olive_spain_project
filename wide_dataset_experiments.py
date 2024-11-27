@@ -5,16 +5,15 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.svm import SVR
+from data_transformer import DataTransformer as dt
 from experiment_utilities import ExperimentUtilityBox as eub
 from experiment import Experiment
 import xgboost as xgb
 
-data = pd.read_pickle("data_under_experiment\\pickle\wide\Wide_Dataframe_22112024_18_05.pickle")
+file = pd.read_pickle("data_under_experiment\\pickle\wide\Wide_Dataframe_22112024_18_05.pickle")
 
-data = data.drop(columns=["Province"],axis=1)
+data = dt.prepare_dataset_for_regression(file,"wide")
 
-new_columns = [column for column in data.columns[2:] if int(column[-2:]) <= 30 and int(column[-2:]) > 0] + ['Yield_Density', 'Year']
-data = data[new_columns]
 
 data["Year"] = data["Year"].astype(int)
 
