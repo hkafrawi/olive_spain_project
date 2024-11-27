@@ -229,6 +229,8 @@ class DataTransformer():
             data[["Model","Best_Params","Dataset_Name","Experiment_Name"]] = data[["Model","Best_Params","Dataset_Name","Experiment_Name"]].astype(str)
             data[["Observations", "MAPE", "MAXP", "r2"]] = data[["Observations", "MAPE", "MAXP", "r2"]].astype(float)
 
+            return data
+
         else:
             raise ValueError("Wrong Description Provided. Please provide a descr as either wide, long or eval")
         
