@@ -205,4 +205,32 @@ class DataTransformer():
                                                                                 "process_data\\csv\\climate_polygon_combined"))
         
         return features_combined
+    
+    @staticmethod
+    def prepare_dataset_for_regression(data: pd.DataFrame, descr:str = None) -> pd.DataFrame:
+        if descr == "wide":
+            data = data.drop(columns=["Province"],axis=1)
+            new_columns = [column for column in data.columns[2:] if int(column[-2:]) <= 30 and int(column[-2:]) > 0] + ['Yield_Density', 'Year']
+            data = data[new_columns]
+
+            return data
+        elif descr == "long":
+            data["Week"] = data["Week"].astype(int)
+            data["Year"] = data["Year"].astype(int)
+            data = data[(data["Week"] > 0)&(data["Week"] <=30 )]
+            data = pd.get_dummies(data, columns=['variable'], drop_first=True)
+            data = pd.get_dummies(data, columns=['Province'], drop_first=True)
+            data = data.dropna(axis=0)
+            data = data.drop("index",axis=1)
+
+            return data
+        
+        elif descr == "eval":
+            data[["Model","Best_Params","Dataset_Name","Experiment_Name"]] = data[["Model","Best_Params","Dataset_Name","Experiment_Name"]].astype(str)
+            data[["Observations", "MAPE", "MAXP", "r2"]] = data[["Observations", "MAPE", "MAXP", "r2"]].astype(float)
+
+            return data
+
+        else:
+            raise ValueError("Wrong Description Provided. Please provide a descr as either wide, long or eval")
         

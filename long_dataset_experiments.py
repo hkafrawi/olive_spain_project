@@ -5,18 +5,14 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.svm import SVR
+from data_transformer import DataTransformer as dt
 from experiment_utilities import ExperimentUtilityBox as eub
 from experiment import Experiment
 import xgboost as xgb
 
-data = pd.read_pickle("data_under_experiment\\pickle\wide\Long_Dataframe_22112024_18_05.pickle")
-data["Week"] = data["Week"].astype(int)
-data["Year"] = data["Year"].astype(int)
-data = data[(data["Week"] > 0)&(data["Week"] <=30 )]
-data = pd.get_dummies(data, columns=['variable'], drop_first=True)
-data = pd.get_dummies(data, columns=['Province'], drop_first=True)
-data = data.dropna(axis=0)
-data = data.drop("index",axis=1)
+file = pd.read_pickle("data_under_experiment\\pickle\wide\Long_Dataframe_22112024_18_05.pickle")
+
+data = dt.prepare_dataset_for_regression(file,"long")
 
 def MAPE(testing_data, prediected_data):
     return mean_absolute_percentage_error(testing_data, prediected_data)
