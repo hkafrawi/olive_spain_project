@@ -20,7 +20,7 @@ datasets = {
     "long": long_df
 }
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
 
 default_dataset = "wide"
 default_features = [col for col in wide_df.columns if col not in ["Year", "Province"]]
@@ -35,8 +35,85 @@ app.layout = html.Div(
             style={"textAlign": "center", "color": "black"},
         ),
 
-        # Dataset Selector
-        dcc.Dropdown(
+        dcc.Tabs(id="tabs", value="data", children=[
+            dcc.Tab(label="Data Dashboard", value="data"),  # Your existing tab
+            dcc.Tab(label="Evaluation Dataset", value="eval"),  # New tab for eval dataset
+        ]),
+        
+        html.Div(id="tabs-content")
+    ])
+
+        
+@app.callback(
+    Output("tabs-content", "children"),
+    [Input("tabs", "value")]
+)
+def render_page(tab):
+    """Render content for each tab (Dashboard or Evaluation Dataset)"""
+    if tab == "eval":
+        return html.Div([
+            # Bar Graph for MAPE, MAXP, R2
+            html.H3("Evaluation Metrics"),
+            dcc.Dropdown(
+                id="eval-metric-dropdown",
+                options=[
+                    {"label": "MAPE", "value": "MAPE"},
+                    {"label": "MAXP", "value": "MAXP"},
+                    {"label": "R2", "value": "r2"},
+                ],
+                value=["MAPE"],  # Default to MAPE
+                multi=True,
+                style={"width": "50%"}
+            ),
+            dcc.Dropdown(
+                id="eval-dataset-dropdown",
+                options=[{"label": dataset, "value": dataset} for dataset in eval_df["Dataset_Name"].unique()],
+                placeholder="Select Dataset Name",
+                style={"width": "50%"}
+            ),
+            dcc.Dropdown(
+                id="eval-experiment-dropdown",
+                options=[{"label": experiment, "value": experiment} for experiment in eval_df["Experiment_Name"].unique()],
+                placeholder="Select Experiment Name",
+                style={"width": "50%"}
+            ),
+            dcc.Graph(id="eval-bar-graph"),
+
+            # Table to display entire dataset with exclude options
+            html.H3("Evaluation Dataset Table"),
+            dash_table.DataTable(
+                id="eval-table",
+                columns=[{"name": col, "id": col} for col in eval_df.columns],
+                data=eval_df.to_dict("records"),
+                style_table={"overflowX": "auto"},
+                style_cell={"textAlign": "left"},
+            ),
+            # Exclude rows and columns section
+            html.Div([
+                html.Label("Select Columns to Exclude:"),
+                dcc.Dropdown(
+                    id="exclude-columns-dropdown",
+                    options=[{"label": col, "value": col} for col in eval_df.columns],
+                    value=[],
+                    multi=True,
+                    placeholder="Select columns to exclude"
+                ),
+                html.Label("Select Rows to Exclude:"),
+                dcc.Input(
+                    id="exclude-rows-input",
+                    type="number",
+                    value=None,
+                    placeholder="Enter row indices to exclude (comma-separated)"
+                ),
+                html.Button("Apply", id="apply-filters-btn", n_clicks=0),
+            ])
+        ])
+    else:
+        return html.Div(children=[
+            html.H3("Data Dashboard Page"),
+
+            # Dataset Selector
+            dcc.Dropdown(
             id="dataset-dropdown",
             options=[
                 {"label": "Wide Dataset", "value": "wide"},
@@ -258,6 +335,74 @@ def generate_heatmap(n_clicks, selected_dataset, selected_features):
         plot_bgcolor="white",
     )
     return fig
+
+@app.callback(
+    Output("eval-bar-graph", "figure"),
+    [
+        Input("eval-metric-dropdown", "value"),
+        Input("eval-dataset-dropdown", "value"),
+        Input("eval-experiment-dropdown", "value")
+    ]
+)
+def update_eval_bar_graph(selected_metrics, selected_dataset, selected_experiment):
+    if not selected_metrics:
+        return px.bar(title="No metrics selected")
+    
+    # Filter DataFrame based on dropdown selections
+    filtered_df = eval_df
+    if selected_dataset:
+        filtered_df = filtered_df[filtered_df["Dataset_Name"] == selected_dataset]
+    if selected_experiment:
+        filtered_df = filtered_df[filtered_df["Experiment_Name"] == selected_experiment]
+
+    # Check if data exists after filtering
+    if filtered_df.empty:
+        return px.bar(title="No data available for selected filters")
+
+    # Melt DataFrame for multiple metrics
+    melted_df = filtered_df.melt(
+        id_vars=["Experiment_Name", "Dataset_Name"],
+        value_vars=selected_metrics,
+        var_name="Metric",
+        value_name="Value"
+    )
+
+    # Create bar plot with color differentiation for metrics
+    fig = px.histogram(
+        melted_df,
+        x="Experiment_Name",
+        y="Value",
+        color="Metric",
+        barmode="group",
+        title="Evaluation Metrics by Experiment"
+    )
+    fig.update_layout(xaxis_title="Experiment Name", yaxis_title="Metric Value")
+
+    return fig
+
+@app.callback(
+    Output("eval-table", "data"),
+    [Input("exclude-columns-dropdown", "value"),
+     Input("exclude-rows-input", "value"),
+     Input("apply-filters-btn", "n_clicks")]
+)
+def update_eval_table(exclude_columns, exclude_rows, n_clicks):
+    """Update the table with excluded rows and columns."""
+    if exclude_columns is None:
+        exclude_columns = []
+    
+    # Filter columns to exclude
+    filtered_df = eval_df.drop(columns=exclude_columns, errors="ignore")
+
+    # Exclude rows based on the input (comma-separated indices)
+    if exclude_rows:
+        try:
+            row_indices = list(map(int, exclude_rows.split(",")))
+            filtered_df = filtered_df.drop(filtered_df.index[row_indices], errors="ignore")
+        except ValueError:
+            pass  # Invalid input, no row exclusion
+
+    return filtered_df.to_dict("records")
 # Run the app
 if __name__ == "__main__":
     app.run_server(debug=True)
