@@ -2,6 +2,14 @@
 
 # Update system packages
 echo "Updating system packages..."
+
+# Install sudo if it's not already installed
+if ! command -v sudo &> /dev/null
+then
+    echo "sudo not found, installing..."
+    apt-get update && apt-get install -y sudo
+fi
+
 sudo apt-get update -y
 
 # Install pip if not installed
