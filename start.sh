@@ -1,22 +1,40 @@
 #!/bin/bash
 
-# Check if Git is installed
-echo "Checking for Git..."
-if ! command -v git &> /dev/null; then
-    echo "Git could not be found! Exiting..."
-    exit 1
+# Update system packages
+echo "Updating system packages..."
+
+# Install sudo if it's not already installed
+if ! command -v sudo &> /dev/null
+then
+    echo "sudo not found, installing..."
+    apt-get update && apt-get install -y sudo
 fi
-echo "Git is installed."
 
-# Install Git LFS (without root access)
-echo "Installing Git LFS..."
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
-git lfs install
+sudo apt-get update -y
 
-# Pull Git LFS data (this assumes LFS pointers are already in the repo)
+# Install pip if not installed
+if ! command -v pip &> /dev/null; then
+    echo "pip not found, installing..."
+    sudo apt-get install -y python3-pip
+else
+    echo "pip is already installed."
+fi
+
+# Install Git LFS if not installed
+if ! command -v git-lfs &> /dev/null; then
+    echo "Git LFS not found, installing..."
+    sudo apt-get install -y git-lfs
+    git lfs install
+else
+    echo "Git LFS is already installed."
+fi
+
+# Pull Git LFS data
 echo "Pulling Git LFS data..."
 git lfs pull
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
 pip install -r requirements.txt
+
+echo "Setup complete!"
