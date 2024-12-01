@@ -9,11 +9,11 @@ import pandas as pd
 # Load datasets
 
 wide_df = dt.prepare_dataset_for_regression(
-    data=pd.read_pickle("data_under_experiment\\pickle\wide\Wide_Dataframe_22112024_18_05.pickle"), descr="wide")
+    data=pd.read_pickle("dashboard_pickle_files\\Wide_Dataframe_22112024_18_05.pickle"), descr="wide")
 long_df = dt.prepare_dataset_for_regression(
-    data=pd.read_pickle("data_under_experiment\\pickle\wide\Long_Dataframe_22112024_18_05.pickle"), descr= "long")
+    data=pd.read_pickle("dashboard_pickle_files\\Long_Dataframe_22112024_18_05.pickle"), descr= "long")
 eval_df = dt.prepare_dataset_for_regression(
-    data=pd.read_pickle("saved_dataframes\\pickel\\Evaluation_Wide_Dataset_23_11_2024 17_48_23112024_17_48.pickle"), descr="eval")
+    data=pd.read_pickle("dashboard_pickle_files\\Evaluation_Wide_Dataset_23_11_2024 17_48_23112024_17_48.pickle"), descr="eval")
 
 datasets = {
     "wide": wide_df,
