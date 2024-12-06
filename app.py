@@ -405,4 +405,4 @@ def update_eval_table(exclude_columns, exclude_rows, n_clicks):
     return filtered_df.to_dict("records")
 # Run the app
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=10000)
