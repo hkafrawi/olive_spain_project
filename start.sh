@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 
 # Check if Git is installed
 echo "Checking for Git..."
@@ -10,7 +11,6 @@ echo "Git is installed."
 
 # Install Git LFS (without root access)
 echo "Installing Git LFS..."
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
 git lfs install
 
 # Pull Git LFS data (this assumes LFS pointers are already in the repo)
