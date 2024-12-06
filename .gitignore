@@ -28,3 +28,5 @@ experiments/*
 
 # Ignore log_files
 log_files/*
+
+visuals/*
